@@ -9,7 +9,7 @@ namespace ArgumentParser
         public bool CaseSensitive { get; set; }
         public string Prefix { get; set; } = "/";
 
-        internal IEqualityComparer<string> GetComparer()
+        protected internal virtual IEqualityComparer<string> GetComparer()
         {
             return !this.CaseSensitive
                 ? StringComparer.CurrentCultureIgnoreCase

@@ -24,7 +24,7 @@ namespace ArgumentParser
         public IEnumerable<string> Keys => _dict.Keys;
         public IEnumerable<object> Values => _dict.Values;
 
-        public string RemainingText { get; }
+        public string RemainingText { get; internal set; }
 
         public ArgumentDictionary(IEqualityComparer<string> comparer)
             : this(0, comparer)
@@ -33,6 +33,29 @@ namespace ArgumentParser
         public ArgumentDictionary(int capacity, IEqualityComparer<string> comparer)
         {
             _dict = new Dictionary<string, object>(capacity, comparer);
+        }
+
+        public bool Add(string key, object value)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentNullException(nameof(key));
+
+            bool result = false;
+            if (!_dict.ContainsKey(key))
+            {
+                _dict.Add(key, value);
+                result = true;
+            }
+
+            return result;
+        }
+        public bool ContainsKey(string key)
+        {
+            return _dict.ContainsKey(key);
+        }
+        public bool Remove(string key)
+        {
+            return _dict.Remove(key);
         }
 
         public bool TryGetFromProperty(PropertyInfo propertyInfo, out object value)
