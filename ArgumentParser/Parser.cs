@@ -97,8 +97,9 @@ namespace ArgumentParser
             Type argType = typeof(ArgumentAttribute);
             IEnumerable<PropertyInfo> props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(x =>
-                    x.CustomAttributes.Any(att =>
-                        argType.IsAssignableFrom(att.AttributeType))
+                    x
+                        .GetCustomAttributes<ArgumentAttribute>()
+                        .Any()
                 );
 
             foreach (PropertyInfo pi in props)
@@ -121,7 +122,7 @@ namespace ArgumentParser
 
         private static bool TryGetConverter(PropertyInfo propertyInfo, out ArgumentConverter converter)
         {
-
+            propertyInfo.GetCustomAttributes<ArgumentAttribute>();
         }
         private static string TrimQuotes(string str)
         {
