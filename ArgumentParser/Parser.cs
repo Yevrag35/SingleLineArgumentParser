@@ -24,14 +24,12 @@ namespace ArgumentParser
             _options = options;
         }
 
-        public T MapArguments<T>(string rawArguments, out string remainingText)
-            where T : class, new()
+        public T MapArguments<T>(T obj, string rawArguments, out string remainingText)
+            where T : class
         {
             remainingText = rawArguments;
             if (string.IsNullOrWhiteSpace(rawArguments))
-                return new T();
-
-            T obj = new T();
+                return obj;
 
             ArgumentDictionary arguments = ParseCheck(rawArguments, _options);
             remainingText = arguments.RemainingText;
@@ -41,6 +39,11 @@ namespace ArgumentParser
             }
 
             return Reflect(obj, arguments);
+        }
+        public T MapArguments<T>(string rawArguments, out string remainingText)
+            where T : class, new()
+        {
+            return this.MapArguments(new T(), rawArguments, out remainingText);
         }
 
         private static void ApplyValue<T>(T obj, PropertyInfo pi, object value)
@@ -79,7 +82,7 @@ namespace ArgumentParser
 
                 string key = match.Groups[1].Value.Trim();
                 object value = match.Groups.Count > 2 && match.Groups[2].Success
-                    ? TryConvertString(match.Groups[2].Value)
+                    ? (object)TrimQuotes(match.Groups[2].Value)
                     : true;
 
                 dict.Add(key, value);
@@ -108,6 +111,29 @@ namespace ArgumentParser
 
             return obj;
         }
+        private static object ConvertValue(PropertyInfo propertyInfo, object rawValue)
+        {
+            if (propertyInfo.PropertyType.Equals(typeof(bool)) && rawValue is bool)
+                return rawValue;
+            
+
+        }
+
+        private static bool TryGetConverter(PropertyInfo propertyInfo, out ArgumentConverter converter)
+        {
+
+        }
+        private static string TrimQuotes(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str))
+                return string.Empty;
+
+            if (str.StartsWith(DOUBLE_QUOTE) && str.EndsWith(DOUBLE_QUOTE))
+                str = str.TrimStart((char)34).TrimEnd((char)34);
+
+            return str;
+        }
+        [Obsolete]
         private static object TryConvertString(string str)
         {
             if (string.IsNullOrWhiteSpace(str))

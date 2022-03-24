@@ -1,6 +1,7 @@
 ﻿using MG.Attributes;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace ArgumentParser
@@ -21,8 +22,8 @@ namespace ArgumentParser
         }
 
         public int Count => _dict.Count;
-        public IEnumerable<string> Keys => _dict.Keys;
-        public IEnumerable<object> Values => _dict.Values;
+        public ICollection<string> Keys => _dict.Keys;
+        public ICollection<object> Values => _dict.Values;
 
         public string RemainingText { get; internal set; }
 
@@ -58,7 +59,11 @@ namespace ArgumentParser
             return _dict.Remove(key);
         }
 
+#if NET5_0_OR_GREATER
+        public bool TryGetFromProperty(PropertyInfo propertyInfo, [NotNullWhen(true)] out object value)
+#else
         public bool TryGetFromProperty(PropertyInfo propertyInfo, out object value)
+#endif
         {
             value = null;
 
