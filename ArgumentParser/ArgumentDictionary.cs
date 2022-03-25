@@ -59,15 +59,11 @@ namespace ArgumentParser
             return _dict.Remove(key);
         }
 
-#if NET5_0_OR_GREATER
-        public bool TryGetFromProperty(PropertyInfo propertyInfo, [NotNullWhen(true)] out object value)
-#else
-        public bool TryGetFromProperty(PropertyInfo propertyInfo, out object value)
-#endif
+        public bool TryGetFromMember(MemberInfo memberInfo, out object value)
         {
             value = null;
 
-            ArgumentDetails details = Valuator.GetValue(propertyInfo);
+            ArgumentDetails details = Valuator.GetValue(memberInfo);
             if (!(details is null))
             {
                 if (_dict.TryGetValue(details.Name, out object tempValue1))

@@ -46,7 +46,18 @@ namespace ArgumentParser
             return this.MapArguments(new T(), rawArguments, out remainingText);
         }
 
-        private static void ApplyValue<T>(T obj, PropertyInfo pi, object value)
+        private static void ApplyMemberValue<T>(T obj, MemberInfo memberInfo, object value)
+        {
+            if (memberInfo.MemberType == MemberTypes.Property && memberInfo is PropertyInfo pi)
+            {
+                ApplyPropertyValue(obj, pi, value);
+            }
+            else if (memberInfo.MemberType == MemberTypes.Field && memberInfo is FieldInfo fi)
+            {
+                ApplyFieldValue(obj, fi, value);
+            }
+        }
+        private static void ApplyPropertyValue<T>(T obj, PropertyInfo pi, object value)
         {
             MethodInfo setAcc = pi.GetSetMethod();
             if (setAcc is null)
@@ -56,6 +67,10 @@ namespace ArgumentParser
                 throw new InvalidOperationException($"Property '{pi.Name}' on type '{typeof(T).Name}' has no available set accessor.");
 
             setAcc.Invoke(obj, new object[1] { value });
+        }
+        private static void ApplyFieldValue<T>(T obj, FieldInfo fi, object value)
+        {
+            fi.SetValue(obj, value);
         }
         private static ArgumentDictionary ParseCheck(string rawArguments, ParserOptions options)
         {
@@ -103,10 +118,10 @@ namespace ArgumentParser
 
             foreach (PropertyInfo pi in props)
             {
-                if (captured.TryGetFromProperty(pi, out object value))
+                if (captured.TryGetFromMember(pi, out object value))
                 {
                     object convertedValue = ConvertValue(obj, pi, value);
-                    ApplyValue(obj, pi, convertedValue);
+                    ApplyPropertyValue(obj, pi, convertedValue);
                 }
             }
 
@@ -160,6 +175,5 @@ namespace ArgumentParser
 
             return str;
         }
-        
     }
 }
