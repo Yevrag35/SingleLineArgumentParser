@@ -8,9 +8,9 @@ using System.Text.RegularExpressions;
 
 namespace ArgumentParser
 {
-    public class Parser
+    public sealed class Parser
     {
-        private const string REGEX_FORMAT = @"{0}(\w+)(?:$|(?:(?:\s|\=)(?:((?:\w+)|\"".+\""))))";
+        private const string REGEX_FORMAT = @"\{0}(\w+)(?:$|(?:(?:\s|\=)(?:((?:\S+)|\"".+\""))))";
         private const string DOUBLE_QUOTE = "\"";
         //private const string SINGLE_QUOTE = "'";
         private readonly ParserOptions _options;
@@ -94,35 +94,61 @@ namespace ArgumentParser
         }
         private static T Reflect<T>(T obj, ArgumentDictionary captured)
         {
-            Type argType = typeof(ArgumentAttribute);
             IEnumerable<PropertyInfo> props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(x =>
-                    x
+                .Where(property =>
+                    property
                         .GetCustomAttributes<ArgumentAttribute>()
-                        .Any()
+                            .Any()
                 );
 
             foreach (PropertyInfo pi in props)
             {
                 if (captured.TryGetFromProperty(pi, out object value))
                 {
-                    ApplyValue(obj, pi, value);
+                    object convertedValue = ConvertValue(obj, pi, value);
+                    ApplyValue(obj, pi, convertedValue);
                 }
             }
 
             return obj;
         }
-        private static object ConvertValue(PropertyInfo propertyInfo, object rawValue)
+        private static object ConvertObject(PropertyInfo propertyInfo, object value)
+        {
+            return Convert.ChangeType(value, propertyInfo.PropertyType);
+        }
+        private static object ConvertValue<T>(T obj, PropertyInfo propertyInfo, object rawValue)
         {
             if (propertyInfo.PropertyType.Equals(typeof(bool)) && rawValue is bool)
                 return rawValue;
-            
 
+            ArgumentAttribute argAtt = propertyInfo.GetCustomAttributes<ArgumentAttribute>()
+                .FirstOrDefault();
+
+            if (argAtt is null)
+                return null;
+            
+            if (TryGetConverter(propertyInfo, out ArgumentConverter converter) && converter.CanConvert(propertyInfo.PropertyType))
+            {
+                object existingValue = propertyInfo.GetValue(obj);
+                return converter.Convert(argAtt, rawValue, existingValue);
+            }
+            else
+            {
+                return ConvertObject(propertyInfo, rawValue);
+            }
         }
 
         private static bool TryGetConverter(PropertyInfo propertyInfo, out ArgumentConverter converter)
         {
-            propertyInfo.GetCustomAttributes<ArgumentAttribute>();
+            converter = null;
+            ArgumentConverterAttribute att = propertyInfo
+                .GetCustomAttributes<ArgumentConverterAttribute>()
+                    .FirstOrDefault();
+            if (att is null)
+                return false;
+
+            converter = (ArgumentConverter)Activator.CreateInstance(att.ConverterType);
+            return !(converter is null);
         }
         private static string TrimQuotes(string str)
         {
@@ -134,26 +160,6 @@ namespace ArgumentParser
 
             return str;
         }
-        [Obsolete]
-        private static object TryConvertString(string str)
-        {
-            if (string.IsNullOrWhiteSpace(str))
-                return string.Empty;
-
-            else if (str.StartsWith(DOUBLE_QUOTE) && str.EndsWith(DOUBLE_QUOTE))
-                str = str.TrimStart((char)34).TrimEnd((char)34);
-
-            if (long.TryParse(str, out long outLong))
-                return outLong;
-
-            else if (bool.TryParse(str, out bool outBool))
-                return outBool;
-
-            else if (Guid.TryParse(str, out Guid outGuid))
-                return outGuid;
-
-            else
-                return str;
-        }
+        
     }
 }

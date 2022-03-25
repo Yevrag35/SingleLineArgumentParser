@@ -12,11 +12,11 @@ namespace ArgumentParser.Tests
         {
             new object[]
             {
-                "condex.exe /name=\"whatup\"", "whatup"
+                "condex.exe /name=\"whatup\" /time 10:00", "whatup", Convert.ToDateTime("10:00")
             },
             new object[]
             {
-                "asdf.jpg, name whatup", "whatup"
+                "asdf.jpg, name whatup", "whatup", Convert.ToDateTime("10:00")
             }
         }.Skip(skip).Take(take);
 
@@ -40,7 +40,7 @@ namespace ArgumentParser.Tests
 
         [Theory]
         [MemberData(nameof(CommandStrings), 1, 0)]
-        public void TestAutoMapping(string commandString, object expectedValue)
+        public void TestAutoMapping(string commandString, object expectedValue, DateTime time)
         {
             var parser = new Parser();
             var argument = parser.MapArguments<MockArgument>(commandString, out string remainingText);
@@ -49,11 +49,12 @@ namespace ArgumentParser.Tests
             Assert.NotEqual(commandString, remainingText);
 
             Assert.Equal(expectedValue, argument.Name);
+            Assert.Equal(time, argument.TheDate);
         }
 
         [Theory]
         [MemberData(nameof(CommandStrings), 1, 0)]
-        public void TestAutoMappingPreLoad(string commandString, object expectedValue)
+        public void TestAutoMappingPreLoad(string commandString, object expectedValue, DateTime time)
         {
             var parser = new Parser();
             var preLoad = new MockArgument();
@@ -66,12 +67,13 @@ namespace ArgumentParser.Tests
             Assert.NotEqual(commandString, remainingText);
 
             Assert.Equal(expectedValue, argument.Name);
+            Assert.Equal(time, argument.TheDate);
             Assert.NotEqual(guid, argument.Name);
         }
 
         [Theory]
         [MemberData(nameof(CommandStrings), 1, 1)]
-        public void TestAutoMappingFail(string commandString, object expectedValue)
+        public void TestAutoMappingFail(string commandString, object expectedValue, DateTime time)
         {
             var parser = new Parser();
             var argument = parser.MapArguments<MockArgument>(commandString, out string remainingText);
@@ -80,6 +82,7 @@ namespace ArgumentParser.Tests
             Assert.Equal(commandString, remainingText);
 
             Assert.NotEqual(expectedValue, argument.Name);
+            Assert.NotEqual(time, argument.TheDate);
         }
     }
 }

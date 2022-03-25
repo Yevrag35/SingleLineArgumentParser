@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace ArgumentParser
 {
-    internal class ArgumentDictionary
+    internal sealed class ArgumentDictionary
     {
         private readonly Dictionary<string, object> _dict;
         private static readonly AttributeValuator<ArgumentAttribute, ArgumentDetails> Valuator =
