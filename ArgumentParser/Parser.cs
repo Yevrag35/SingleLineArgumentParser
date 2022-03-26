@@ -171,9 +171,55 @@ namespace ArgumentParser
 
             setAcc.Invoke(obj, new object[1] { value });
         }
-        private static object ConvertObject(MemberInfo memInfo, Type toType, object value)
+        private static object ConvertEnumerable(MemberInfo memInfo, Type toType, object value, object existingValue)
         {
-            return Convert.ChangeType(value, toType);
+            if (!(value is List<object> list) || list.Count <= 0)
+                return existingValue;
+
+            if (toType.IsArray)
+            {
+                return CreateArray(toType, list, existingValue);
+            }
+
+            if (existingValue is null)
+            {
+                existingValue = Activator.CreateInstance(toType);
+            }
+
+            Type[] genericArguments = toType.GetGenericArguments();
+            Func<object, object> func;
+            switch (genericArguments.Length)
+            {
+                case 0:
+                    func = (incoming) => incoming;
+                    break;
+
+                default:
+                    func = (incoming) => ConvertObject(memInfo, genericArguments[0], incoming, null);
+                    break;
+            }
+
+            MethodInfo addMethod = FindAddMethod(toType);
+
+            list.ForEach(o =>
+            {
+                object converted = func(o);
+                ExecuteAddMethod(addMethod, existingValue, converted);
+            });
+
+            return existingValue;
+        }
+        private static object ConvertObject(MemberInfo memInfo, Type toType, object value, object existingValue)
+        {
+            Type enumerableType = typeof(IEnumerable);
+            if (toType.IsArray || (!toType.IsValueType && !toType.Equals(typeof(string)) && toType.GetInterfaces().Any(x => enumerableType.IsAssignableFrom(x))))
+            {
+                return ConvertEnumerable(memInfo, toType, value, existingValue);
+            }
+            else
+            {
+                return Convert.ChangeType(value, toType);
+            }
         }
         private static object ConvertValue<T>(T obj, MemberInfo memberInfo, object rawValue)
         {
@@ -191,8 +237,39 @@ namespace ArgumentParser
             }
             else
             {
-                return ConvertObject(memberInfo, valueType, rawValue);
+                return ConvertObject(memberInfo, valueType, rawValue, existingValue);
             }
+        }
+        private static object CreateArray(Type arrayType, List<object> list, object existingValue)
+        {
+            Type elementType = arrayType.GetElementType();
+            if (!(existingValue is Array existingArray))
+            {
+                existingArray = Array.CreateInstance(elementType, 0);
+            }
+
+            Array arr = Array.CreateInstance(elementType, list.Count + existingArray.Length);
+
+            if (existingArray.Length > 0)
+            {
+                existingArray.CopyTo(arr, 0);
+            }
+
+            for (int i = existingArray.Length; i < list.Count + existingArray.Length; i++)
+            {
+                object converted = ConvertObject(null, elementType, list[i - existingArray.Length], null);
+                arr.SetValue(converted, i);
+            }
+
+            return arr;
+        }
+        private static void ExecuteAddMethod(MethodInfo addMethod, object collection, object toBeAdded)
+        {
+            addMethod.Invoke(collection, new object[] { toBeAdded });
+        }
+        private static MethodInfo FindAddMethod(Type enumerableType)
+        {
+            return enumerableType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public);
         }
         private static object GetExistingValue(object fromObj, MemberInfo memberInfo, out Type memberValueType)
         {

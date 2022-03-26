@@ -8,6 +8,8 @@ namespace ArgumentParser.Tests
 {
     public class ArgumentTest
     {
+        private const string Guid = "9957d0b7-3bf9-49ac-a32d-710b5d284a94";
+
         public static IEnumerable<object[]> CommandStrings(int take, int skip) => new object[][]
         {
             new object[]
@@ -84,7 +86,7 @@ namespace ArgumentParser.Tests
         {
             var parser = new Parser();
             var preLoad = new MockArgument();
-            string guid = Guid.NewGuid().ToString();
+            string guid = Guid;
             preLoad.Name = guid;   // Pre-define value to see if it overwrites.
 
             var argument = parser.MapArguments(preLoad, commandString, out string remainingText);
@@ -156,6 +158,29 @@ namespace ArgumentParser.Tests
             for (int i = 0; i < param1Value.Count; i++)
             {
                 Assert.Equal(param1Value[i], list[i]);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(DuplicateCommandString))]
+        public void TestDuplicateMapping(string commandString, string param1Name, string param2Name, string param2Value, List<object> param1Value)
+        {
+            Parser parser = new(new ParserOptions
+            {
+                AllowDuplicates = true,
+                Prefix = "--"
+            });
+
+            MockArgument mock = parser.MapArguments<MockArgument>(commandString, out string remainingText);
+            Assert.Equal(string.Empty, remainingText);
+
+            Assert.NotNull(mock);
+            Assert.NotNull(mock.Numbers);
+            Assert.Equal(param1Value.Count + 1, mock.Numbers.Length);
+
+            for (int i = 0; i < param1Value.Count; i++)
+            {
+                Assert.Equal(mock.Numbers[i + 1], Convert.ToInt32(param1Value[i]));
             }
         }
     }
