@@ -74,7 +74,10 @@
             <returns>
                 The previously constructed object of type <typeparamref name="T"/> with any matching properties/fields having been set.
             </returns>
-            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
+            <exception cref="T:ArgumentParser.ArgumentParsingException">
+                A duplicate argument was parsed and the specified <see cref="P:ArgumentParser.ParserOptions.AllowDuplicates"/>
+                is <see langword="false"/>.
+            </exception>
             <exception cref="T:ArgumentParser.ArgumentReflectionException"></exception>
         </member>
         <member name="M:ArgumentParser.Parser.MapArguments``1(System.String,System.String@)">
@@ -87,8 +90,13 @@
             <returns>
                 A new instance of <typeparamref name="T"/> with any matching properties/fields having been set.
             </returns>
-            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
-            <exception cref="T:ArgumentParser.ArgumentReflectionException"></exception>
+            <exception cref="T:ArgumentParser.ArgumentParsingException">
+                A duplicate argument was parsed and the specified <see cref="P:ArgumentParser.ParserOptions.AllowDuplicates"/>
+                is <see langword="false"/>.
+            </exception>
+            <exception cref="T:ArgumentParser.ArgumentReflectionException">
+                One or more of the matching arguments could be not set to a property/field on type <typeparamref name="T"/>.
+            </exception>
         </member>
         <member name="M:ArgumentParser.Parser.Parse(System.String,System.String@)">
             <summary>
@@ -107,11 +115,14 @@
                 parse as arguments.  If all text has been parsed into argument/value pairs, then <paramref name="remainingText"/> will
                 be <see cref="F:System.String.Empty"/>.
             </returns>
-            <exception cref="T:ArgumentParser.ArgumentParsingException"/>
+            <exception cref="T:ArgumentParser.ArgumentParsingException">
+                A duplicate argument was parsed and the specified <see cref="P:ArgumentParser.ParserOptions.AllowDuplicates"/>
+                is <see langword="false"/>.
+            </exception>
         </member>
         <member name="M:ArgumentParser.Parser.ApplyMemberValue``1(``0,System.Reflection.MemberInfo,System.Object)">
-            <exception cref="T:ArgumentParser.ArgumentParsingException">
-                
+            <exception cref="T:ArgumentParser.ArgumentReflectionException">
+                <paramref name="memberInfo"/> threw an exception when attempting to set its value to <paramref name="value"/>.
             </exception>
         </member>
         <member name="M:ArgumentParser.Parser.ApplyFieldValue(System.Object,System.Reflection.FieldInfo,System.Object)">
@@ -132,8 +143,27 @@
                 and stored in the field.
             </exception>
         </member>
+        <member name="M:ArgumentParser.Parser.ApplyPropertyValue``1(``0,System.Reflection.PropertyInfo,System.Object)">
+            <exception cref="T:ArgumentParser.ArgumentReflectionException"></exception>
+            <exception cref="T:System.Reflection.TargetException">
+                In theportal class library catch <see cref="T:System.Exception"/> instead. <paramref name="obj"/> is 
+                <see langword="null"/> and the method is not <see langword="static"/>. -or- The method is not declared or inherited by 
+                the class of <paramref name="obj"/>. -or- A <see langword="static"/> constructor is invoked, and 
+                <paramref name="obj"/> is neither <see langword="null"/> nor an instance of the class that declared the constructor.
+            </exception>
+            <exception cref="T:System.ArgumentException">
+                The elements of the parameters array do not match the signature of the method
+                or constructor reflected by this instance.
+            </exception>
+            <exception cref="T:System.NotSupportedException">
+                The current instance is a System.Reflection.Emit.MethodBuilder.
+            </exception>
+        </member>
         <member name="M:ArgumentParser.Parser.ParseCheck(System.String,ArgumentParser.ParserOptions)">
-            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
+            <exception cref="T:ArgumentParser.ArgumentParsingException">
+                A duplicate argument was parsed and the specified <see cref="P:ArgumentParser.ParserOptions.AllowDuplicates"/>
+                is <see langword="false"/>.
+            </exception>
         </member>
         <member name="T:ArgumentParser.ParserOptions">
             <summary>
@@ -145,6 +175,7 @@
             Indicates that the <see cref="T:ArgumentParser.Parser"/> can map duplicate argument names.  Any duplicate arguments will have their
             values coalesced.
             </summary>
+            <remarks>Default: <see langword="false"/></remarks>
         </member>
         <member name="P:ArgumentParser.ParserOptions.CaseSensitive">
             <summary>

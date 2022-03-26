@@ -16,6 +16,7 @@ namespace ArgumentParser
         /// Indicates that the <see cref="Parser"/> can map duplicate argument names.  Any duplicate arguments will have their
         /// values coalesced.
         /// </summary>
+        /// <remarks>Default: <see langword="false"/></remarks>
         public bool AllowDuplicates { get; set; }
 
         /// <summary>

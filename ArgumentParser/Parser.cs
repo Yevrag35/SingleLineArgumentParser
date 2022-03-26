@@ -46,7 +46,10 @@ namespace ArgumentParser
         /// <returns>
         ///     The previously constructed object of type <typeparamref name="T"/> with any matching properties/fields having been set.
         /// </returns>
-        /// <exception cref="ArgumentParsingException"></exception>
+        /// <exception cref="ArgumentParsingException">
+        ///     A duplicate argument was parsed and the specified <see cref="ParserOptions.AllowDuplicates"/>
+        ///     is <see langword="false"/>.
+        /// </exception>
         /// <exception cref="ArgumentReflectionException"></exception>
         public T MapArguments<T>(T obj, string rawArguments, out string remainingText)
             where T : class
@@ -73,8 +76,13 @@ namespace ArgumentParser
         /// <returns>
         ///     A new instance of <typeparamref name="T"/> with any matching properties/fields having been set.
         /// </returns>
-        /// <exception cref="ArgumentParsingException"></exception>
-        /// <exception cref="ArgumentReflectionException"></exception>
+        /// <exception cref="ArgumentParsingException">
+        ///     A duplicate argument was parsed and the specified <see cref="ParserOptions.AllowDuplicates"/>
+        ///     is <see langword="false"/>.
+        /// </exception>
+        /// <exception cref="ArgumentReflectionException">
+        ///     One or more of the matching arguments could be not set to a property/field on type <typeparamref name="T"/>.
+        /// </exception>
         public T MapArguments<T>(string rawArguments, out string remainingText)
             where T : class, new()
         {
@@ -97,7 +105,10 @@ namespace ArgumentParser
         ///     parse as arguments.  If all text has been parsed into argument/value pairs, then <paramref name="remainingText"/> will
         ///     be <see cref="string.Empty"/>.
         /// </returns>
-        /// <exception cref="ArgumentParsingException"/>
+        /// <exception cref="ArgumentParsingException">
+        ///     A duplicate argument was parsed and the specified <see cref="ParserOptions.AllowDuplicates"/>
+        ///     is <see langword="false"/>.
+        /// </exception>
         public IDictionary<string, object> Parse(string rawArguments, out string remainingText)
         {
             ArgumentDictionary dictionary = ParseCheck(rawArguments, _options);
@@ -107,8 +118,8 @@ namespace ArgumentParser
 
         #endregion
 
-        /// <exception cref="ArgumentParsingException">
-        ///     
+        /// <exception cref="ArgumentReflectionException">
+        ///     <paramref name="memberInfo"/> threw an exception when attempting to set its value to <paramref name="value"/>.
         /// </exception>
         private static void ApplyMemberValue<T>(T obj, MemberInfo memberInfo, object value)
         {
@@ -120,7 +131,7 @@ namespace ArgumentParser
                 }
                 catch (Exception propEx)
                 {
-                    throw new ArgumentParsingException(propEx);
+                    throw new ArgumentReflectionException(propEx);
                 }
             }
             else if (memberInfo.MemberType == MemberTypes.Field && memberInfo is FieldInfo fi)
@@ -131,13 +142,13 @@ namespace ArgumentParser
                 }
                 catch (Exception fieldEx)
                 {
-                    throw new ArgumentParsingException(fieldEx);
+                    throw new ArgumentReflectionException(fieldEx);
                 }
             }
             else
             {
                 var invalid = new InvalidOperationException($"'{nameof(memberInfo)}' is not a property or field.");
-                throw new ArgumentParsingException(invalid);
+                throw new ArgumentReflectionException(invalid);
             }
         }
         /// <exception cref="FieldAccessException">
@@ -160,6 +171,21 @@ namespace ArgumentParser
         {
             fi.SetValue(obj, value);
         }
+
+        /// <exception cref="ArgumentReflectionException"></exception>
+        /// <exception cref="TargetException">
+        ///     In theportal class library catch <see cref="Exception"/> instead. <paramref name="obj"/> is 
+        ///     <see langword="null"/> and the method is not <see langword="static"/>. -or- The method is not declared or inherited by 
+        ///     the class of <paramref name="obj"/>. -or- A <see langword="static"/> constructor is invoked, and 
+        ///     <paramref name="obj"/> is neither <see langword="null"/> nor an instance of the class that declared the constructor.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     The elements of the parameters array do not match the signature of the method
+        ///     or constructor reflected by this instance.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        ///     The current instance is a System.Reflection.Emit.MethodBuilder.
+        /// </exception>
         private static void ApplyPropertyValue<T>(T obj, PropertyInfo pi, object value)
         {
             MethodInfo setAcc = pi.GetSetMethod();
@@ -167,7 +193,8 @@ namespace ArgumentParser
                 setAcc = pi.GetSetMethod(true);
 
             if (setAcc is null)
-                throw new InvalidOperationException($"Property '{pi.Name}' on type '{typeof(T).Name}' has no available set accessor.");
+                throw new ArgumentReflectionException(new MissingMethodException(pi.DeclaringType.FullName, $"{pi.Name}_set"),
+                    $"Property '{pi.Name}' on type '{typeof(T).Name}' has no available set accessor.");
 
             setAcc.Invoke(obj, new object[1] { value });
         }
@@ -307,7 +334,10 @@ namespace ArgumentParser
                                 .Any();
                     });
         }
-        /// <exception cref="ArgumentParsingException"></exception>
+        /// <exception cref="ArgumentParsingException">
+        ///     A duplicate argument was parsed and the specified <see cref="ParserOptions.AllowDuplicates"/>
+        ///     is <see langword="false"/>.
+        /// </exception>
         private static ArgumentDictionary ParseCheck(string rawArguments, ParserOptions options)
         {
             if (string.IsNullOrWhiteSpace(rawArguments))
