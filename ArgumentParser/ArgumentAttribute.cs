@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ArgumentParser
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class ArgumentAttribute : Attribute
     {
         public string Name { get; }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 
 namespace ArgumentParser
@@ -29,26 +30,37 @@ namespace ArgumentParser
 
         public ArgumentDictionary(IEqualityComparer<string> comparer)
             : this(0, comparer)
-        { 
+        {
         }
         public ArgumentDictionary(int capacity, IEqualityComparer<string> comparer)
         {
             _dict = new Dictionary<string, object>(capacity, comparer);
         }
 
-        public bool Add(string key, object value)
+        public bool Add(string key, object value, out Exception caughtException)
         {
+            caughtException = null;
             if (string.IsNullOrWhiteSpace(key))
-                throw new ArgumentNullException(nameof(key));
-
-            bool result = false;
-            if (!_dict.ContainsKey(key))
             {
-                _dict.Add(key, value);
-                result = true;
+                caughtException = new ArgumentNullException(nameof(key));
+                return false;
+            }
+            else if (this[key] is List<object> list)
+            {
+                list.Add(value);
+                return true;
             }
 
-            return result;
+            try
+            {
+                _dict.Add(key, value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                caughtException = ex;
+                return false;
+            }
         }
         public bool ContainsKey(string key)
         {
@@ -57,6 +69,19 @@ namespace ArgumentParser
         public bool Remove(string key)
         {
             return _dict.Remove(key);
+        }
+
+        public IDictionary<string, object> ToDictionary(out string remainingText)
+        {
+            remainingText = this.RemainingText;
+            var newDict = new Dictionary<string, object>(this.Count, _dict.Comparer);
+
+            foreach (KeyValuePair<string, object> kvp in _dict)
+            {
+                newDict.Add(kvp.Key, kvp.Value);
+            }
+
+            return newDict;
         }
 
         public bool TryGetFromMember(MemberInfo memberInfo, out object value)

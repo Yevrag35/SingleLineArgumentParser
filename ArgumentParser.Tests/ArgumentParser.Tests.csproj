@@ -22,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ArgumentParser\ArgumentParser.csproj" />
+    <ProjectReference Include="..\ArgumentParser\ArgumentParser.csproj">
+      <CopyLocal>True</CopyLocal>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

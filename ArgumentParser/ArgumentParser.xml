@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ArgumentParser</name>
+    </assembly>
+    <members>
+        <member name="T:ArgumentParser.ArgumentParsingException">
+            <summary>
+            An exception class specifying that an unhandled parsing <see cref="T:System.Exception"/> occurred.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ArgumentParsingException.#ctor(System.Exception,System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentParsingException"/> with the specified message and inner exception that caused
+            the exception.
+            </summary>
+            <param name="innerException">The underlying <see cref="T:System.Exception"/> that caused the <see cref="T:ArgumentParser.ArgumentParsingException"/>.</param>
+            <param name="message">The message format to be displayed with the <see cref="T:ArgumentParser.ArgumentParsingException"/>.</param>
+            <param name="arguments">Any arguments to be passed into the <paramref name="message"/> format.</param>
+        </member>
+        <member name="M:ArgumentParser.ArgumentParsingException.#ctor(System.Exception)">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentParsingException"/> with the specified inner exception that caused
+            the exception.
+            </summary>
+            <param name="innerException">The underlying <see cref="T:System.Exception"/> that caused the <see cref="T:ArgumentParser.ArgumentParsingException"/>.</param>
+        </member>
+        <member name="T:ArgumentParser.ArgumentReflectionException">
+            <summary>
+            Thrown when a reflection <see cref="T:System.Exception"/> occurs when applying values to 
+            <see cref="T:System.Reflection.PropertyInfo"/> and/or <see cref="T:System.Reflection.FieldInfo"/> instances.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ArgumentReflectionException.#ctor(System.Exception,System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentReflectionException"/> with the specified message and inner exception that caused
+            the exception. 
+            </summary>
+            <param name="innerException">The underlying <see cref="T:System.Exception"/> that caused the <see cref="T:ArgumentParser.ArgumentReflectionException"/>.</param>
+            <param name="message">The message format to be displayed with the <see cref="T:ArgumentParser.ArgumentReflectionException"/>.</param>
+            <param name="arguments">Any arguments to be passed into the <paramref name="message"/> format.</param>
+        </member>
+        <member name="M:ArgumentParser.ArgumentReflectionException.#ctor(System.Exception)">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentReflectionException"/> with the inner exception that caused
+            the exception.
+            </summary>
+            <param name="innerException">The underlying <see cref="T:System.Exception"/> that caused the <see cref="T:ArgumentParser.ArgumentReflectionException"/>.</param>
+        </member>
+        <member name="T:ArgumentParser.Parser">
+            <summary>
+            A class used for parsing arguments from a single <see cref="T:System.String"/> command line intepretation.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.Parser.#ctor">
+            <summary>
+            The default constructor using a default <see cref="T:ArgumentParser.ParserOptions"/> instance.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.Parser.#ctor(ArgumentParser.ParserOptions)">
+            <summary>
+            Constructs an instance of <see cref="T:ArgumentParser.Parser"/> using the specified <see cref="T:ArgumentParser.ParserOptions"/>.
+            </summary>
+            <param name="options">The options that the <see cref="T:ArgumentParser.Parser"/> will use.</param>
+        </member>
+        <member name="M:ArgumentParser.Parser.MapArguments``1(``0,System.String,System.String@)">
+            <summary>
+            Maps arguments to properties/fields of a previously constructed class instance.
+            </summary>
+            <typeparam name="T">The type of object whose properties/fields will be mapped.</typeparam>
+            <param name="obj">The object whose properties/fields will be mapped.</param>
+            <param name="rawArguments">The single <see cref="T:System.String"/> command line where the arguments will be parsed from.</param>
+            <param name="remainingText">The <see cref="T:System.String"/> that remains after all arguments and values have been parsed out.</param>
+            <returns>
+                The previously constructed object of type <typeparamref name="T"/> with any matching properties/fields having been set.
+            </returns>
+            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
+            <exception cref="T:ArgumentParser.ArgumentReflectionException"></exception>
+        </member>
+        <member name="M:ArgumentParser.Parser.MapArguments``1(System.String,System.String@)">
+            <summary>
+            Constructs a new instance of <typeparamref name="T"/> and maps arguments to its properties/fields.
+            </summary>
+            <typeparam name="T">The type of object that will be constructed and whose properties/fields will be mapped.</typeparam>
+            <param name="rawArguments">The single <see cref="T:System.String"/> command line where the arguments will be parsed from.</param>
+            <param name="remainingText">The <see cref="T:System.String"/> that remains after all arguments and values have been parsed out.</param>
+            <returns>
+                A new instance of <typeparamref name="T"/> with any matching properties/fields having been set.
+            </returns>
+            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
+            <exception cref="T:ArgumentParser.ArgumentReflectionException"></exception>
+        </member>
+        <member name="M:ArgumentParser.Parser.Parse(System.String,System.String@)">
+            <summary>
+            Parses the given argument <see cref="T:System.String"/> or command line input and returns a dictionary of any argument/value pairs
+            found based on the <see cref="T:ArgumentParser.ParserOptions"/> given to the <see cref="T:ArgumentParser.Parser"/>.
+            </summary>
+            <param name="rawArguments">The single <see cref="T:System.String"/> command line where the arguments will be parsed from.</param>
+            <param name="remainingText">
+                The <see cref="T:System.String"/> that remains after all arguments and values have been parsed out.
+            </param>
+            <returns>
+                An <see cref="T:System.Collections.Generic.IDictionary`2"/> with <see cref="T:System.String"/> keys and values.  If an argument was matched but had 
+                no corresponding value, the value will be <see cref="F:System.String.Empty"/>.
+                
+                The out parameter <paramref name="remainingText"/> will be the <see cref="T:System.String"/> value of any remaining text that did
+                parse as arguments.  If all text has been parsed into argument/value pairs, then <paramref name="remainingText"/> will
+                be <see cref="F:System.String.Empty"/>.
+            </returns>
+            <exception cref="T:ArgumentParser.ArgumentParsingException"/>
+        </member>
+        <member name="M:ArgumentParser.Parser.ApplyMemberValue``1(``0,System.Reflection.MemberInfo,System.Object)">
+            <exception cref="T:ArgumentParser.ArgumentParsingException">
+                
+            </exception>
+        </member>
+        <member name="M:ArgumentParser.Parser.ApplyFieldValue(System.Object,System.Reflection.FieldInfo,System.Object)">
+            <exception cref="T:System.FieldAccessException">
+                In the [.NET for Windows Store apps](http://go.microsoft.com/fwlink/?LinkID=247912)
+                or the portal class library,
+                catch the base class exception, <see cref="T:System.MemberAccessException"/>, instead. The caller
+                does not have permission to access this field.
+            </exception>
+            <exception cref="T:System.Reflection.TargetException">
+                In the [.NET for Windows Store apps](http://go.microsoft.com/fwlink/?LinkID=247912)
+                or the portal class library,
+                catch <see cref="T:System.Exception"/> instead. <paramref name="obj"/> is <see langword="null"/> and the field is an
+                instance field.
+            </exception>
+            <exception cref="T:System.ArgumentException">
+                The field does not exist on <paramref name="obj"/>. -or- <paramref name="value"/> cannot be converted
+                and stored in the field.
+            </exception>
+        </member>
+        <member name="M:ArgumentParser.Parser.ParseCheck(System.String,ArgumentParser.ParserOptions)">
+            <exception cref="T:ArgumentParser.ArgumentParsingException"></exception>
+        </member>
+        <member name="T:ArgumentParser.ParserOptions">
+            <summary>
+            A class specifying options for an instance of <see cref="T:ArgumentParser.Parser"/>.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ParserOptions.AllowDuplicates">
+            <summary>
+            Indicates that the <see cref="T:ArgumentParser.Parser"/> can map duplicate argument names.  Any duplicate arguments will have their
+            values coalesced.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ParserOptions.CaseSensitive">
+            <summary>
+            Indicates that argument names and aliases are matched using a case-sensitive string comparer.
+            </summary>
+            <remarks>Default: <see langword="false"/></remarks>
+        </member>
+        <member name="P:ArgumentParser.ParserOptions.Prefix">
+            <summary>
+            The prefix that proceeds all arguments in the <see cref="T:System.String"/>. If a <see langword="null"/> value is supplied to 
+            the set accessor, the prefix will revert back to the default value.
+            </summary>
+            <remarks>Default: /</remarks>
+        </member>
+        <member name="M:ArgumentParser.ParserOptions.#ctor">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ParserOptions"/>.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ParserOptions.GetComparer">
+            <summary>
+            Returns an <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> depending on the <see cref="P:ArgumentParser.ParserOptions.CaseSensitive"/> property's value.
+            </summary>
+            <remarks>
+                When overriden in derived classes it can return custom string comparers, but should always return a <see cref="T:System.Collections.Generic.IEqualityComparer`1"/>
+                that either adheres to the <see cref="P:ArgumentParser.ParserOptions.CaseSensitive"/> option.
+            </remarks>
+            <returns>
+                Depending on the value of <see cref="P:ArgumentParser.ParserOptions.CaseSensitive"/>, an <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> instance that either does
+                or does not adhere to <see cref="T:System.String"/> casing rules.
+            </returns>
+        </member>
+    </members>
+</doc>

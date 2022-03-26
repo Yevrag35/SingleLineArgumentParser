@@ -20,6 +20,14 @@ namespace ArgumentParser.Tests
             }
         }.Skip(skip).Take(take);
 
+        public static IEnumerable<object[]> DuplicateCommandString => new object[][]
+        {
+            new object[]
+            {
+                "--number 1 --number=2 --name 'hi there'", "number", "name", "hi there", new List<object>(2) { "1", "2" }
+            }
+        };
+
         [Fact]
         public void ConstructorTest()
         {
@@ -30,10 +38,28 @@ namespace ArgumentParser.Tests
         [Fact]
         public void OptionsTest()
         {
-            var options = new ParserOptions();
+            ParserOptions parserOptions = new();
+            var options = parserOptions;
             Assert.NotNull(options.Prefix);
 
             Assert.False(options.CaseSensitive);
+
+            ParserOptions options2 = new()
+            {
+                Prefix = null,
+                CaseSensitive = true
+            };
+
+            Assert.NotNull(options2.Prefix);
+            Assert.Equal(options.Prefix, options2.Prefix);
+
+            Assert.True(options2.CaseSensitive);
+
+            StringComparer ignoreCase = StringComparer.CurrentCultureIgnoreCase;
+            StringComparer noIgnoreCase = StringComparer.CurrentCulture;
+
+            Assert.Equal(ignoreCase, options.GetComparer());
+            Assert.Equal(noIgnoreCase, options2.GetComparer());
 
             _ = new Parser(options);
         }
@@ -83,6 +109,54 @@ namespace ArgumentParser.Tests
 
             Assert.NotEqual(expectedValue, argument.Name);
             Assert.NotEqual(time, argument.TheDate);
+        }
+
+        [Theory]
+        [MemberData(nameof(DuplicateCommandString))]
+        public void TestDuplicateFail(string commandString, string param1Name, string param2Name, string param2Value, List<object> param1Value)
+        {
+            Parser parser = new(new ParserOptions
+            {
+                AllowDuplicates = false,
+                Prefix = "--"
+            });
+
+            Assert.Throws<ArgumentParsingException>(() => parser.Parse(commandString, out string remainingText));
+        }
+
+        [Theory]
+        [MemberData(nameof(DuplicateCommandString))]
+        public void TestDuplicatePass(string commandString, string param1Name, string param2Name, string param2Value, List<object> param1Value)
+        {
+            Parser parser = new(new ParserOptions
+            {
+                AllowDuplicates = true,
+                Prefix = "--"
+            });
+
+            IDictionary<string, object> arguments = parser.Parse(commandString, out string remainingText);
+            Assert.Equal(string.Empty, remainingText);
+
+            Assert.NotNull(arguments);
+            Assert.Equal(2, arguments.Count);
+
+            Assert.True(arguments.ContainsKey(param1Name));
+            Assert.True(arguments.ContainsKey(param2Name));
+
+            Assert.Equal(param2Value, arguments[param2Name]);
+
+            Assert.IsType<List<object>>(arguments[param1Name]);
+            List<object> list = (List<object>)arguments[param1Name];
+
+            list.ForEach(o =>
+            {
+                Assert.IsType<string>(o);
+            });
+
+            for (int i = 0; i < param1Value.Count; i++)
+            {
+                Assert.Equal(param1Value[i], list[i]);
+            }
         }
     }
 }

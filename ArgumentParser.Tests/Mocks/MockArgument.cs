@@ -8,6 +8,8 @@ namespace ArgumentParser.Tests.Mocks
 {
     public class MockArgument
     {
+
+
         [Argument("thisName", "name")]
         //[ArgumentConverter(typeof(TestNameConverter))]
         public string Name { get; set; } = string.Empty;
