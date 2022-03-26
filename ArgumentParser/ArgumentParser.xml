@@ -4,6 +4,161 @@
         <name>ArgumentParser</name>
     </assembly>
     <members>
+        <member name="T:ArgumentParser.ArgumentAttribute">
+            <summary>
+            Indicates that the decorated property or field is an argument that should be mapped when parsed by
+            a <see cref="T:ArgumentParser.Parser"/> instance.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ArgumentAttribute.Name">
+            <summary>
+            The name of the argument that should be parsed.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ArgumentAttribute.Aliases">
+            <summary>
+            Additional names for the <see cref="T:ArgumentParser.Parser"/> to match this argument by.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ArgumentAttribute.#ctor(System.String,System.String[])">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentAttribute"/> with the specified argument name and optional
+            aliases.
+            </summary>
+            <param name="name">The name of the argument to match.</param>
+            <param name="aliases">Additional names for the argument.</param>
+        </member>
+        <member name="T:ArgumentParser.ArgumentConverter">
+            <summary>
+            Converts an argument's value.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter.CanConvert(System.Type)">
+            <summary>
+            Determines whether this <see cref="T:ArgumentParser.ArgumentConverter"/> can the specified object <see cref="T:System.Type"/>.
+            </summary>
+            <param name="objectType">The type of the object.</param>
+            <returns>
+                <see langword="true"/> if this instance can convert the specified object <see cref="T:System.Type"/>;
+                otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter.Convert(ArgumentParser.ArgumentAttribute,System.Object,System.Object)">
+            <summary>
+            Converts the parsed value from the command line.
+            </summary>
+            <param name="attribute">The attribute that the <paramref name="rawValue"/> matched.</param>
+            <param name="rawValue">The parsed value from the command line to convert.</param>
+            <param name="existingValue">The existing value, if any, of the member on which this attribute was decorated.</param>
+            <returns>
+                The converted object.
+            </returns>
+        </member>
+        <member name="T:ArgumentParser.ArgumentConverter`1">
+            <summary>
+            Converts an argument's value to an object of type <typeparamref name="TValue"/>.
+            </summary>
+            <typeparam name="TValue">The <see cref="T:System.Type"/> to convert the value to.</typeparam>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter`1.Convert(ArgumentParser.ArgumentAttribute,System.Object,`0,System.Boolean)">
+            <summary>
+            Converts the parsed value from the command line to an object of type <typeparamref name="TValue"/>.
+            </summary>
+            <param name="attribute">The attribute that the <paramref name="rawValue"/> matched.</param>
+            <param name="rawValue">The parsed value from the command line to convert.</param>
+            <param name="existingValue">The existing value, if any, of the member on which this attribute was decorated.</param>
+            <param name="hasExistingValue"><paramref name="existingValue"/> has a value.</param>
+            <returns>
+                The converted object of type <typeparamref name="TValue"/>.
+            </returns>
+            <exception cref="T:System.ArgumentException"><paramref name="existingValue"/> is of the wrong <see cref="T:System.Type"/>.</exception>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter`1.Convert(ArgumentParser.ArgumentAttribute,System.Object,System.Object)">
+            <summary>
+            Converts the parsed value from the command line.
+            </summary>
+            <param name="attribute">The attribute that the <paramref name="rawValue"/> matched.</param>
+            <param name="rawValue">The parsed value from the command line to convert.</param>
+            <param name="existingValue">The existing value, if any, of the member on which this attribute was decorated.</param>
+            <returns>
+                The converted object.
+            </returns>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter`1.CanConvert(System.Type)">
+            <summary>
+            Determines whether this <see cref="T:ArgumentParser.ArgumentConverter"/> can the specified object <see cref="T:System.Type"/>.
+            </summary>
+            <param name="objectType">The type of the object.</param>
+            <returns>
+                <see langword="true"/> if this instance can convert the specified object <see cref="T:System.Type"/>;
+                otherwise, <see langword="false"/>.
+            </returns>
+        </member>
+        <member name="T:ArgumentParser.ArgumentConverter`2">
+            <summary>
+            Converts the parsed value from the command line to an object of type <typeparamref name="TValue"/> that had been 
+            matched from the specific attribute of type <typeparamref name="TAttribute"/>.
+            </summary>
+            <typeparam name="TAttribute">The <see cref="T:System.Type"/> of <see cref="T:ArgumentParser.ArgumentAttribute"/> that the argument matched.</typeparam>
+            <typeparam name="TValue">The <see cref="T:System.Type"/> to convert the value to.</typeparam>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter`2.Convert(`0,System.Object,`1,System.Boolean,System.Type)">
+            <summary>
+            Converts the parsed value from the command line to an object of type <typeparamref name="TValue"/>.
+            </summary>
+            <param name="attribute">The attribute that the <paramref name="rawValue"/> matched.</param>
+            <param name="rawValue">The parsed value from the command line to convert.</param>
+            <param name="existingValue">The existing value, if any, of the member on which this attribute was decorated.</param>
+            <param name="hasExistingValue"><paramref name="existingValue"/> has a value.</param>
+            <param name="attributeType">The <see cref="T:System.Type"/> of attribute that the argument matched.</param>
+            <returns>
+                The converted object of type <typeparamref name="TValue"/>.
+            </returns>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverter`2.Convert(ArgumentParser.ArgumentAttribute,System.Object,`1,System.Boolean)">
+            <summary>
+            Converts the parsed value from the command line to an object of type <typeparamref name="TValue"/>.
+            </summary>
+            <param name="attribute">The attribute that the <paramref name="rawValue"/> matched.</param>
+            <param name="rawValue">The parsed value from the command line to convert.</param>
+            <param name="existingValue">The existing value, if any, of the member on which this attribute was decorated.</param>
+            <param name="hasExistingValue"><paramref name="existingValue"/> has a value.</param>
+            <returns>
+                The converted object of type <typeparamref name="TValue"/>.
+            </returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="attribute"/> is <see langword="null"/>.</exception>
+        </member>
+        <member name="T:ArgumentParser.ArgumentConverterAttribute">
+            <summary>
+            Instructs the <see cref="T:ArgumentParser.Parser"/> to use the specified <see cref="T:ArgumentParser.ArgumentConverter"/> when parsing arguments.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ArgumentConverterAttribute.ConverterType">
+            <summary>
+            Gets the <see cref="T:System.Type"/> of the <see cref="T:ArgumentParser.ArgumentConverter"/>.
+            </summary>
+        </member>
+        <member name="M:ArgumentParser.ArgumentConverterAttribute.#ctor(System.Type)">
+            <summary>
+            Initializes a new instance of <see cref="T:ArgumentParser.ArgumentConverterAttribute"/>.
+            </summary>
+            <param name="typeOfConverter">Type of the <see cref="T:ArgumentParser.ArgumentConverter"/>.</param>
+        </member>
+        <member name="T:ArgumentParser.ArgumentDetails">
+            <summary>
+            A class that contains details about the <see cref="T:ArgumentParser.ArgumentAttribute"/>.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ArgumentDetails.Name">
+            <summary>
+            The name of the argument that should be parsed.
+            </summary>
+        </member>
+        <member name="P:ArgumentParser.ArgumentDetails.Aliases">
+            <summary>
+            Additional names for the <see cref="T:ArgumentParser.Parser"/> to match this argument by.
+            </summary>
+        </member>
         <member name="T:ArgumentParser.ArgumentParsingException">
             <summary>
             An exception class specifying that an unhandled parsing <see cref="T:System.Exception"/> occurred.

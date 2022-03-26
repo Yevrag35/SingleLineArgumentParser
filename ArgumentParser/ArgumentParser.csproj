@@ -4,6 +4,18 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <DocumentationFile>.\ArgumentParser.xml</DocumentationFile>
+	  <FileVersion>1.0.0</FileVersion>
+	  <AssemblyVersion>1.0.0</AssemblyVersion>
+	  <Product>ArgumentParser</Product>
+	  <AssemblyTitle>SingleLineArgumentParser</AssemblyTitle>
+	  <Company>Yevrag35, LLC.</Company>
+	  <Authors>Mike Garvey</Authors>
+	  <Copyright>Copyright © 2022 Yevrag35, LLC.  All rights reserved.</Copyright>
+	  <PackageLicenseUrl>https://github.com/Yevrag35/SingleLineArgumentParser/blob/master/LICENSE</PackageLicenseUrl>
+	  <PackageProjectUrl>https://github.com/Yevrag35/SingleLineArgumentParser</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/Yevrag35/SingleLineArgumentParser.git</RepositoryUrl>
+	  <RepositoryType>Git</RepositoryType>
+	  <Description>A library for parsing/mapping arguments from a single string line to .NET objects.</Description>
   </PropertyGroup>
 
   <ItemGroup>
