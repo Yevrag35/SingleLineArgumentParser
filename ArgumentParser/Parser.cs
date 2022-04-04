@@ -13,9 +13,9 @@ namespace ArgumentParser
     /// </summary>
     public sealed class Parser
     {
-        private const string REGEX_FORMAT = @"{0}(\S+?)(?:$|(?:(?:\s|\=)(?:((?:(?:(?:\w|\-|\)|\(|\:)+)|(?:(?:\').+(?:\'))|(?:(?:(?:\w|\-|\)|\(|\:)+)|(?:(?:\"").+(?:\""))))))))";
-        private const string DOUBLE_QUOTE = "\"";
-        private const string SINGLE_QUOTE = "'";
+        private const string REGEX_FORMAT = @"(?<!\S){0}(?'Command'\w+)(?:\s+|\=)(?:(?:\""(?'Value'.+?)\"")|(?'Value'[\w\,\+\?\-\=\*\&\%\$\#\@\!\(\)\^\;\:\[\]\\\|]+)|(?:\'(?'Value'.+?)\')|(?'Value'))";
+        //private const string DOUBLE_QUOTE = "\"";
+        //private const string SINGLE_QUOTE = "'";
         private readonly ParserOptions _options;
 
         /// <summary>
@@ -325,13 +325,14 @@ namespace ArgumentParser
         }
         private static IEnumerable<MemberInfo> GetMembers<T>()
         {
+            Type argAttType = typeof(ArgumentAttribute);
+
             return typeof(T)
-                .GetMembers(BindingFlags.Public | BindingFlags.Instance)
+                .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                     .Where(mem =>
                     {
-                        return mem
-                            .GetCustomAttributes<ArgumentAttribute>()
-                                .Any();
+                        return mem.CustomAttributes
+                            .Any(att => argAttType.IsAssignableFrom(att.AttributeType));
                     });
         }
         /// <exception cref="ArgumentParsingException">
@@ -351,7 +352,7 @@ namespace ArgumentParser
             }
 
             string regex = string.Format(REGEX_FORMAT, Regex.Escape(options.Prefix));
-            RegexOptions rgOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
+            RegexOptions rgOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
             if (options.CaseSensitive)
                 rgOptions |= RegexOptions.IgnoreCase;
 
@@ -361,10 +362,20 @@ namespace ArgumentParser
             for (int i = 0; i < collection.Count; i++)
             {
                 Match match = collection[i];
-                rawArguments = rawArguments.Replace(match.Groups[0].Value, string.Empty).Trim();
+                if (!match.Success || (match.Groups.Count > 0 && !match.Groups[0].Success))
+                    continue;
 
-                string key = match.Groups[1].Value.Trim();
-                if (dict.ContainsKey(key) && options.AllowDuplicates)
+                Group commandGroup = match.Groups["Command"];
+                if (commandGroup is null || !commandGroup.Success)
+                    continue;
+
+                rawArguments = rawArguments.Replace(match.Groups[0].Value, string.Empty).Trim();
+                
+                string key = commandGroup.Value;
+
+
+                //string key = match.Groups[1].Value.Trim();
+                if (dict.ContainsKey(key) && !(dict[key] is List<object>) && options.AllowDuplicates)
                 {
                     object existingValue = dict[key];
                     if (dict.Remove(key))
@@ -374,15 +385,23 @@ namespace ArgumentParser
                     }
                 }
 
-                object value = match.Groups.Count > 2 && match.Groups[2].Success
-                    ? (object)TrimQuotes(match.Groups[2].Value.Trim())
-                    : true;
+                object value;
+                Group valueGroup = match.Groups["Value"];
+                if (valueGroup is null || !valueGroup.Success || string.IsNullOrWhiteSpace(valueGroup.Value))
+                    value = true;   // Then we'll treat this as a switch.
+
+                else
+                    value = valueGroup.Value.Trim();
+
+                //object value = match.Groups.Count > 2 && match.Groups[2].Success
+                //    ? (object)TrimQuotes(match.Groups[2].Value.Trim())
+                //    : true;
 
                 if (!dict.Add(key, value, out Exception exception))
                     throw new ArgumentParsingException(exception, "Unable to add key '{0}' and value '{1}' to the ArgumentDictionary.", key, value);
             }
 
-            dict.RemainingText = rawArguments.Trim();
+            dict.RemainingText = rawArguments;
 
             return dict;
         }
@@ -413,18 +432,18 @@ namespace ArgumentParser
             converter = (ArgumentConverter)Activator.CreateInstance(att.ConverterType);
             return !(converter is null);
         }
-        private static string TrimQuotes(string str)
-        {
-            if (string.IsNullOrWhiteSpace(str))
-                return string.Empty;
+        //private static string TrimQuotes(string str)
+        //{
+        //    if (string.IsNullOrWhiteSpace(str))
+        //        return string.Empty;
 
-            if (str.StartsWith(DOUBLE_QUOTE) && str.EndsWith(DOUBLE_QUOTE))
-                str = str.TrimStart((char)34).TrimEnd((char)34);
+        //    if (str.StartsWith(DOUBLE_QUOTE) && str.EndsWith(DOUBLE_QUOTE))
+        //        str = str.TrimStart((char)34).TrimEnd((char)34);
 
-            else if (str.StartsWith(SINGLE_QUOTE) && str.EndsWith(SINGLE_QUOTE))
-                str = str.TrimStart((char)39).TrimEnd((char)39);
+        //    else if (str.StartsWith(SINGLE_QUOTE) && str.EndsWith(SINGLE_QUOTE))
+        //        str = str.TrimStart((char)39).TrimEnd((char)39);
 
-            return str;
-        }
+        //    return str;
+        //}
     }
 }

@@ -3,7 +3,7 @@
 	<metadata>
 		<id>SingleLineArgumentParser</id>
 		<title>SingleLineArgumentParser</title>
-		<version>1.0.0</version>
+		<version>1.1.0</version>
 		<authors>Mike Garvey</authors>
 		<owners>Yevrag35, LLC.</owners>
 		<icon>images\Parser.png</icon>
@@ -15,7 +15,7 @@
 		<copyright>Copyright © 2022 Yevrag35, LLC.  All rights reserved.</copyright>
 		<repository type="Git" url="https://github.com/Yevrag35/SingleLineArgumentParser.git" />
 		<summary>A library for parsing/mapping arguments from a single string line to .NET objects.</summary>
-		<!-- <releaseNotes></releaseNotes> -->
+		<releaseNotes>Fixes for the parser to ensure arguments name/value pairs are captured correctly.</releaseNotes>
 		<dependencies>
 			<group targetFramework=".NetStandard2.0">
 				<dependency id="MG.Attributes" version="1.0.1"/>

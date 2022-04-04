@@ -1,4 +1,5 @@
 using ArgumentParser.Tests.Mocks;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace ArgumentParser.Tests
         {
             new object[]
             {
-                "condex.exe /name=\"whatup\" /time 10:00", "whatup", Convert.ToDateTime("10:00")
+                "condex.exe /name \"whatup\" /time 10:00", "whatup", Convert.ToDateTime("10:00")
             },
             new object[]
             {
@@ -182,6 +183,30 @@ namespace ArgumentParser.Tests
             {
                 Assert.Equal(mock.Numbers[i + 1], Convert.ToInt32(param1Value[i]));
             }
+        }
+
+        [Fact]
+        public void TheBigTest()
+        {
+            string text = @"--name Marin --series ""Dress-up Darling"" --name ""Marin /Kitagawa"" /series=whatever  /series=""asdf1""   /series   asdfsdk /justaflag /name ""asdf"" /series   'jiohnoi' /series 'John, the ""Fisherman""?' /name=John:,_/F321isherman? asdf";
+            var dict = new Dictionary<string, object[]>(3)
+            {
+                { "name", new string[2] { "asdf1", "John:,_" } },
+                { "series", new string[] { "asdfsdk", "jiohnoi", "John, the \"Fisherman\"?" } },
+                { "justaflag", new object[] { true } }
+            };
+
+            Parser parser = new(new ParserOptions
+            {
+                AllowDuplicates = true,
+                Prefix = "/"
+            });
+
+            var mock = parser.MapArguments<TheBigArgument>(text, out string remainingText);
+
+            Assert.True(mock.Flag);
+            Assert.Equal(5, mock.Series.Count);
+            Assert.Equal(2, mock.Name.Count);
         }
     }
 }
