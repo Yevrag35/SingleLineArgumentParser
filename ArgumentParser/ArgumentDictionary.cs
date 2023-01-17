@@ -10,12 +10,14 @@ namespace ArgumentParser
     internal sealed class ArgumentDictionary
     {
         private readonly Dictionary<string, object> _dict;
+        private string? _text;
+
         private static readonly AttributeValuator<ArgumentAttribute, ArgumentDetails> Valuator =
             new AttributeValuator<ArgumentAttribute, ArgumentDetails>(
                 (att) => new ArgumentDetails(att)
             );
 
-        public object this[string name]
+        public object? this[string name]
         {
             get => _dict.TryGetValue(name, out object value)
                 ? value
@@ -26,7 +28,11 @@ namespace ArgumentParser
         public ICollection<string> Keys => _dict.Keys;
         public ICollection<object> Values => _dict.Values;
 
-        public string RemainingText { get; internal set; }
+        public string RemainingText
+        {
+            get => _text ??= string.Empty;
+            internal set => _text = value;
+        }
 
         public ArgumentDictionary(IEqualityComparer<string> comparer)
             : this(0, comparer)

@@ -31,8 +31,16 @@ namespace ArgumentParser
         /// <remarks>Default: /</remarks>
         public string Prefix
         {
-            get => _prefix ?? DEFAULT_PREFIX;
-            set => _prefix = value;
+            get => _prefix;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    value = DEFAULT_PREFIX;
+                }
+
+                _prefix = value;
+            }
         }
 
         /// <summary>
@@ -41,7 +49,7 @@ namespace ArgumentParser
         public ParserOptions()
         {
             this.CaseSensitive = false;
-            this.Prefix = DEFAULT_PREFIX;
+            _prefix = DEFAULT_PREFIX;
         }
 
         /// <summary>

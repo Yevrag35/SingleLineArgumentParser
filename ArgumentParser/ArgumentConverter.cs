@@ -27,7 +27,7 @@ namespace ArgumentParser
         /// <returns>
         ///     The converted object.
         /// </returns>
-        public abstract object Convert(ArgumentAttribute attribute, object rawValue, object existingValue);
+        public abstract object? Convert(ArgumentAttribute attribute, object? rawValue, object? existingValue);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ namespace ArgumentParser
         ///     The converted object of type <typeparamref name="TValue"/>.
         /// </returns>
         /// <exception cref="ArgumentException"><paramref name="existingValue"/> is of the wrong <see cref="Type"/>.</exception>
-        public abstract TValue Convert(ArgumentAttribute attribute, object rawValue, TValue existingValue, bool hasExistingValue);
+        public abstract TValue Convert(ArgumentAttribute attribute, object? rawValue, TValue existingValue, bool hasExistingValue);
         /// <summary>
         /// Converts the parsed value from the command line.
         /// </summary>
@@ -57,12 +57,16 @@ namespace ArgumentParser
         /// <returns>
         ///     The converted object.
         /// </returns>
-        public sealed override object Convert(ArgumentAttribute attribute, object rawValue, object existingValue)
+        public sealed override object? Convert(ArgumentAttribute attribute, object? rawValue, object? existingValue)
         {
             bool existingIsNull = existingValue is null;
             if (!(existingValue is null || existingValue is TValue))
-                throw new ArgumentException(string.Format("Converter cannot process the existing value.  '{0}' is required.",
-                    typeof(TValue)));
+            {
+                throw new ArgumentException(
+                    message: string.Format(
+                        format: "Converter cannot process the existing value. '{0}' is required.",
+                        arg0: typeof(TValue)));
+            }
 
             return this.Convert(attribute, rawValue, existingIsNull ? default : (TValue)existingValue, !existingIsNull);
         }
@@ -99,7 +103,7 @@ namespace ArgumentParser
         /// <returns>
         ///     The converted object of type <typeparamref name="TValue"/>.
         /// </returns>
-        public abstract TValue Convert(TAttribute attribute, object rawValue, TValue existingValue, bool hasExistingValue, Type attributeType);
+        public abstract TValue Convert(TAttribute attribute, object? rawValue, TValue existingValue, bool hasExistingValue, Type attributeType);
 
         /// <summary>
         /// Converts the parsed value from the command line to an object of type <typeparamref name="TValue"/>.
@@ -112,10 +116,12 @@ namespace ArgumentParser
         ///     The converted object of type <typeparamref name="TValue"/>.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="attribute"/> is <see langword="null"/>.</exception>
-        public sealed override TValue Convert(ArgumentAttribute attribute, object rawValue, TValue existingValue, bool hasExistingValue)
+        public sealed override TValue Convert(ArgumentAttribute attribute, object? rawValue, TValue existingValue, bool hasExistingValue)
         {
             if (attribute is null)
+            {
                 throw new ArgumentNullException(nameof(attribute));
+            }
 
             Type attType = attribute.GetType();
             return this.Convert((TAttribute)attribute, rawValue, existingValue, hasExistingValue, attType);

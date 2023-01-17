@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -14,8 +15,7 @@ namespace ArgumentParser
     public sealed class Parser
     {
         private const string REGEX_FORMAT = @"(?<!\S){0}(?'Command'\w+)(?:\s+|\=)(?:(?:\""(?'Value'.+?)\"")|(?'Value'[\w\,\+\?\-\=\*\&\%\$\#\@\!\(\)\^\;\:\[\]\\\|]+)|(?:\'(?'Value'.+?)\')|(?'Value'))";
-        //private const string DOUBLE_QUOTE = "\"";
-        //private const string SINGLE_QUOTE = "'";
+
         private readonly ParserOptions _options;
 
         /// <summary>
@@ -30,9 +30,12 @@ namespace ArgumentParser
         /// Constructs an instance of <see cref="Parser"/> using the specified <see cref="ParserOptions"/>.
         /// </summary>
         /// <param name="options">The options that the <see cref="Parser"/> will use.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     <paramref name="options"/> is <see langword="null"/>.
+        /// </exception>
         public Parser(ParserOptions options)
         {
-            _options = options;
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         #region PUBLIC METHODS
@@ -60,6 +63,7 @@ namespace ArgumentParser
 
             ArgumentDictionary arguments = ParseCheck(rawArguments, _options);
             remainingText = arguments.RemainingText;
+
             if (arguments.Count <= 0)
             {
                 return obj;
@@ -121,7 +125,7 @@ namespace ArgumentParser
         /// <exception cref="ArgumentReflectionException">
         ///     <paramref name="memberInfo"/> threw an exception when attempting to set its value to <paramref name="value"/>.
         /// </exception>
-        private static void ApplyMemberValue<T>(T obj, MemberInfo memberInfo, object value)
+        private static void ApplyMemberValue<T>(T obj, MemberInfo memberInfo, object? value)
         {
             if (memberInfo.MemberType == MemberTypes.Property && memberInfo is PropertyInfo pi)
             {
@@ -147,7 +151,9 @@ namespace ArgumentParser
             }
             else
             {
-                var invalid = new InvalidOperationException($"'{nameof(memberInfo)}' is not a property or field.");
+                var invalid = new InvalidOperationException(
+                    message: $"'{nameof(memberInfo)}' is not a property or field.");
+
                 throw new ArgumentReflectionException(invalid);
             }
         }
@@ -167,9 +173,12 @@ namespace ArgumentParser
         ///     The field does not exist on <paramref name="obj"/>. -or- <paramref name="value"/> cannot be converted
         ///     and stored in the field.
         /// </exception>
-        private static void ApplyFieldValue(object obj, FieldInfo fi, object value)
+        private static void ApplyFieldValue(object? obj, FieldInfo fi, object? value)
         {
-            fi.SetValue(obj, value);
+            if (null != obj)
+            {
+                fi.SetValue(obj, value);
+            }
         }
 
         /// <exception cref="ArgumentReflectionException"></exception>
@@ -186,22 +195,31 @@ namespace ArgumentParser
         /// <exception cref="NotSupportedException">
         ///     The current instance is a System.Reflection.Emit.MethodBuilder.
         /// </exception>
-        private static void ApplyPropertyValue<T>(T obj, PropertyInfo pi, object value)
+        private static void ApplyPropertyValue<T>(T obj, PropertyInfo pi, object? value)
         {
-            MethodInfo setAcc = pi.GetSetMethod();
+            MethodInfo? setAcc = pi.GetSetMethod();
             if (setAcc is null)
+            {
                 setAcc = pi.GetSetMethod(true);
+            }
 
             if (setAcc is null)
-                throw new ArgumentReflectionException(new MissingMethodException(pi.DeclaringType.FullName, $"{pi.Name}_set"),
-                    $"Property '{pi.Name}' on type '{typeof(T).Name}' has no available set accessor.");
+            {
+                throw new ArgumentReflectionException(
+                    innerException: new MissingMethodException(
+                        className: pi.DeclaringType.FullName, 
+                        methodName: $"{pi.Name}_set"),
+                    message: $"Property '{pi.Name}' on type '{typeof(T).Name}' has no available set accessor.");
+            }
 
-            setAcc.Invoke(obj, new object[1] { value });
+            setAcc.Invoke(obj, new object?[] { value });
         }
-        private static object ConvertEnumerable(MemberInfo memInfo, Type toType, object value, object existingValue)
+        private static object? ConvertEnumerable(MemberInfo? memInfo, Type toType, object? value, object? existingValue)
         {
             if (!(value is List<object> list) || list.Count <= 0)
+            { 
                 return existingValue;
+            }
 
             if (toType.IsArray)
             {
@@ -214,29 +232,22 @@ namespace ArgumentParser
             }
 
             Type[] genericArguments = toType.GetGenericArguments();
-            Func<object, object> func;
-            switch (genericArguments.Length)
+            Func<object?, object?> func = genericArguments.Length switch
             {
-                case 0:
-                    func = (incoming) => incoming;
-                    break;
-
-                default:
-                    func = (incoming) => ConvertObject(memInfo, genericArguments[0], incoming, null);
-                    break;
-            }
-
+                0 => (incoming) => incoming,
+                _ => (incoming) => ConvertObject(memInfo, genericArguments[0], incoming, null),
+            };
             MethodInfo addMethod = FindAddMethod(toType);
 
             list.ForEach(o =>
             {
-                object converted = func(o);
+                object? converted = func(o);
                 ExecuteAddMethod(addMethod, existingValue, converted);
             });
 
             return existingValue;
         }
-        private static object ConvertObject(MemberInfo memInfo, Type toType, object value, object existingValue)
+        private static object? ConvertObject(MemberInfo? memInfo, Type toType, object? value, object? existingValue)
         {
             Type enumerableType = typeof(IEnumerable);
             if (toType.IsArray || (!toType.IsValueType && !toType.Equals(typeof(string)) && toType.GetInterfaces().Any(x => enumerableType.IsAssignableFrom(x))))
@@ -248,17 +259,20 @@ namespace ArgumentParser
                 return Convert.ChangeType(value, toType);
             }
         }
-        private static object ConvertValue<T>(T obj, MemberInfo memberInfo, object rawValue)
+        private static object? ConvertValue<T>(T obj, MemberInfo memberInfo, object? rawValue)
         {
-            ArgumentAttribute argAtt = memberInfo.GetCustomAttributes<ArgumentAttribute>()
+            ArgumentAttribute? argAtt = memberInfo
+                .GetCustomAttributes<ArgumentAttribute>()
                 .FirstOrDefault();
 
             if (argAtt is null)
+            {
                 return null;
+            }
 
-            object existingValue = GetExistingValue(obj, memberInfo, out Type valueType);
+            object? existingValue = GetExistingValue(obj, memberInfo, out Type valueType);
 
-            if (TryGetConverter(memberInfo, out ArgumentConverter converter) && converter.CanConvert(valueType))
+            if (TryGetConverter(memberInfo, out ArgumentConverter? converter) && converter.CanConvert(valueType))
             {
                 return converter.Convert(argAtt, rawValue, existingValue);
             }
@@ -267,7 +281,7 @@ namespace ArgumentParser
                 return ConvertObject(memberInfo, valueType, rawValue, existingValue);
             }
         }
-        private static object CreateArray(Type arrayType, List<object> list, object existingValue)
+        private static object CreateArray(Type arrayType, List<object> list, object? existingValue)
         {
             Type elementType = arrayType.GetElementType();
             if (!(existingValue is Array existingArray))
@@ -284,24 +298,38 @@ namespace ArgumentParser
 
             for (int i = existingArray.Length; i < list.Count + existingArray.Length; i++)
             {
-                object converted = ConvertObject(null, elementType, list[i - existingArray.Length], null);
+                object? converted = ConvertObject(null, elementType, list[i - existingArray.Length], null);
                 arr.SetValue(converted, i);
             }
 
             return arr;
         }
-        private static void ExecuteAddMethod(MethodInfo addMethod, object collection, object toBeAdded)
+        private static void ExecuteAddMethod(MethodInfo addMethod, object? collection, object? toBeAdded)
         {
-            addMethod.Invoke(collection, new object[] { toBeAdded });
+            if (null == collection || null == toBeAdded)
+            {
+                return;
+            }
+
+            _ = addMethod.Invoke(collection, new object[] { toBeAdded });
         }
         private static MethodInfo FindAddMethod(Type enumerableType)
         {
-            return enumerableType.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public);
+            return enumerableType.GetMethod(
+                name: "Add", 
+                bindingAttr: BindingFlags.Instance | BindingFlags.Public);
         }
-        private static object GetExistingValue(object fromObj, MemberInfo memberInfo, out Type memberValueType)
+        private static object? GetExistingValue(object? fromObj, MemberInfo memberInfo, out Type memberValueType)
         {
+            if (null == fromObj)
+            {
+                memberValueType = typeof(object);
+                return null;
+            }
+
             memberValueType = typeof(string);
-            object o;
+            object? o;
+
             switch (memberInfo.MemberType)
             {
                 case MemberTypes.Property:
@@ -331,8 +359,10 @@ namespace ArgumentParser
                 .GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                     .Where(mem =>
                     {
-                        return mem.CustomAttributes
-                            .Any(att => argAttType.IsAssignableFrom(att.AttributeType));
+                        return mem
+                            .CustomAttributes
+                                .Any(att => 
+                                    argAttType.IsAssignableFrom(att.AttributeType));
                     });
         }
         /// <exception cref="ArgumentParsingException">
@@ -353,28 +383,38 @@ namespace ArgumentParser
 
             string regex = string.Format(REGEX_FORMAT, Regex.Escape(options.Prefix));
             RegexOptions rgOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
+
             if (options.CaseSensitive)
+            {
                 rgOptions |= RegexOptions.IgnoreCase;
+            }
 
             MatchCollection collection = Regex.Matches(rawArguments, regex, rgOptions);
-            ArgumentDictionary dict = new ArgumentDictionary(collection.Count, options.GetComparer());
+            ArgumentDictionary dict = new ArgumentDictionary(
+                capacity: collection.Count, 
+                comparer: options.GetComparer());
 
             for (int i = 0; i < collection.Count; i++)
             {
                 Match match = collection[i];
-                if (!match.Success || (match.Groups.Count > 0 && !match.Groups[0].Success))
+                if (!match.Success || MatchHasGroupsButNoSuccess(match))
+                {
                     continue;
+                }
 
                 Group commandGroup = match.Groups["Command"];
                 if (commandGroup is null || !commandGroup.Success)
+                {
                     continue;
+                }    
 
-                rawArguments = rawArguments.Replace(match.Groups[0].Value, string.Empty).Trim();
-                
+                rawArguments = rawArguments.Replace(
+                    oldValue: match.Groups[0].Value, 
+                    newValue: string.Empty)
+                    .Trim();
+
                 string key = commandGroup.Value;
 
-
-                //string key = match.Groups[1].Value.Trim();
                 if (dict.ContainsKey(key) && !(dict[key] is List<object>) && options.AllowDuplicates)
                 {
                     object existingValue = dict[key];
@@ -388,23 +428,33 @@ namespace ArgumentParser
                 object value;
                 Group valueGroup = match.Groups["Value"];
                 if (valueGroup is null || !valueGroup.Success || string.IsNullOrWhiteSpace(valueGroup.Value))
+                {
                     value = true;   // Then we'll treat this as a switch.
-
+                }
                 else
+                {
                     value = valueGroup.Value.Trim();
-
-                //object value = match.Groups.Count > 2 && match.Groups[2].Success
-                //    ? (object)TrimQuotes(match.Groups[2].Value.Trim())
-                //    : true;
+                }
 
                 if (!dict.Add(key, value, out Exception exception))
-                    throw new ArgumentParsingException(exception, "Unable to add key '{0}' and value '{1}' to the ArgumentDictionary.", key, value);
+                {
+                    throw new ArgumentParsingException(
+                        innerException: exception, 
+                        message: "Unable to add key '{0}' and value '{1}' to the ArgumentDictionary.",
+                        key, value);
+                }
             }
 
             dict.RemainingText = rawArguments;
 
             return dict;
         }
+
+        private static bool MatchHasGroupsButNoSuccess(Match match)
+        {
+            return match.Groups.Count > 0 && !match.Groups[0].Success;
+        }
+
         private static T Reflect<T>(T obj, ArgumentDictionary captured)
         {
             IEnumerable<MemberInfo> memberInfos = GetMembers<T>();
@@ -413,37 +463,27 @@ namespace ArgumentParser
             {
                 if (captured.TryGetFromMember(memInfo, out object value))
                 {
-                    object convertedValue = ConvertValue(obj, memInfo, value);
+                    object? convertedValue = ConvertValue(obj, memInfo, value);
                     ApplyMemberValue(obj, memInfo, convertedValue);
                 }
             }
 
             return obj;
         }
-        private static bool TryGetConverter(MemberInfo propertyInfo, out ArgumentConverter converter)
+        private static bool TryGetConverter(MemberInfo propertyInfo, [NotNullWhen(true)] out ArgumentConverter? converter)
         {
             converter = null;
-            ArgumentConverterAttribute att = propertyInfo
+            ArgumentConverterAttribute? att = propertyInfo
                 .GetCustomAttributes<ArgumentConverterAttribute>()
                     .FirstOrDefault();
+
             if (att is null)
+            {
                 return false;
+            }
 
             converter = (ArgumentConverter)Activator.CreateInstance(att.ConverterType);
             return !(converter is null);
         }
-        //private static string TrimQuotes(string str)
-        //{
-        //    if (string.IsNullOrWhiteSpace(str))
-        //        return string.Empty;
-
-        //    if (str.StartsWith(DOUBLE_QUOTE) && str.EndsWith(DOUBLE_QUOTE))
-        //        str = str.TrimStart((char)34).TrimEnd((char)34);
-
-        //    else if (str.StartsWith(SINGLE_QUOTE) && str.EndsWith(SINGLE_QUOTE))
-        //        str = str.TrimStart((char)39).TrimEnd((char)39);
-
-        //    return str;
-        //}
     }
 }
