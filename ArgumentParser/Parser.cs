@@ -415,12 +415,13 @@ namespace ArgumentParser
 
                 string key = commandGroup.Value;
 
-                if (dict.ContainsKey(key) && !(dict[key] is List<object>) && options.AllowDuplicates)
+                //if (dict.ContainsKey(key) && !(dict[key] is List<object>) && options.AllowDuplicates)
+                if (dict.TryGetValue(key, out List<object> list) && options.AllowDuplicates)
                 {
-                    object existingValue = dict[key];
+                    object? existingValue = dict[key];
                     if (dict.Remove(key))
                     {
-                        if (!dict.Add(key, new List<object>(2) { existingValue }, out Exception caughtException))
+                        if (!dict.TryAdd(key, new List<object>(2) { existingValue }, out Exception caughtException))
                             throw new ArgumentParsingException(caughtException);
                     }
                 }
@@ -436,7 +437,7 @@ namespace ArgumentParser
                     value = valueGroup.Value.Trim();
                 }
 
-                if (!dict.Add(key, value, out Exception exception))
+                if (!dict.TryAdd(key, value, out Exception? exception))
                 {
                     throw new ArgumentParsingException(
                         innerException: exception, 

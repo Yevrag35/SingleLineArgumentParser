@@ -43,7 +43,15 @@ namespace ArgumentParser
             _dict = new Dictionary<string, object>(capacity, comparer);
         }
 
-        public bool Add(string key, object value, out Exception caughtException)
+        public bool ContainsKey(string key)
+        {
+            return _dict.ContainsKey(key);
+        }
+        public bool Remove(string key)
+        {
+            return _dict.Remove(key);
+        }
+        public bool TryAdd(string key, object value, [NotNullWhen(false)] out Exception? caughtException)
         {
             caughtException = null;
             if (string.IsNullOrWhiteSpace(key))
@@ -68,13 +76,19 @@ namespace ArgumentParser
                 return false;
             }
         }
-        public bool ContainsKey(string key)
+
+        public bool TryGetValue<T>(string key, [NotNullWhen(true)] out T value)
         {
-            return _dict.ContainsKey(key);
-        }
-        public bool Remove(string key)
-        {
-            return _dict.Remove(key);
+            if (_dict.TryGetValue(key, out object? oVal) && oVal is T tVal)
+            {
+                value = tVal;
+                return true;
+            }
+            else
+            {
+                value = default!;
+                return false;
+            }
         }
 
         public IDictionary<string, object> ToDictionary(out string remainingText)
@@ -90,9 +104,13 @@ namespace ArgumentParser
             return newDict;
         }
 
-        public bool TryGetFromMember(MemberInfo memberInfo, out object value)
+        public bool TryGetFromMember(MemberInfo? memberInfo, out object? value)
         {
             value = null;
+            if (memberInfo is null)
+            {
+                return false;
+            }
 
             ArgumentDetails details = Valuator.GetValue(memberInfo);
             if (!(details is null))
